@@ -1,0 +1,20 @@
+version: '1.0'
+
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    environment:
+      SA_PASSWORD: "senha@1234"
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: "Developer"
+    ports:
+      - 1433:1433
+
+  variacaoativo-api:
+    build: ./../src/
+    image: variacaoativo-api
+    container_name: variacaoativo-api
+    ports:
+      - 5000:5000
+    depends_on:
+      - sqlserver

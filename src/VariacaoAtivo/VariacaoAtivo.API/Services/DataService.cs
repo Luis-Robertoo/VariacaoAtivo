@@ -1,5 +1,6 @@
 ﻿using VariacaoAtivo.API.DTOs;
 using VariacaoAtivo.API.Entities;
+using VariacaoAtivo.API.Integration;
 using VariacaoAtivo.API.Interfaces;
 
 namespace VariacaoAtivo.API.Services;
@@ -8,19 +9,43 @@ public class DataService : IDataService
 {
     private readonly IGetDataApiService _getDataService;
     private readonly IAssetValueRepositorie _assetValueRepositorie;
-    public DataService(IGetDataApiService getDataService, IAssetValueRepositorie assetValueRepositorie)
+    private readonly IFinanceAsset _financeAsset;
+    public DataService(IGetDataApiService getDataService, IAssetValueRepositorie assetValueRepositorie, IFinanceAsset financeAsset)
     {
         _getDataService = getDataService;
         _assetValueRepositorie = assetValueRepositorie;
+        _financeAsset = financeAsset;
     }
 
     public async Task<List<AssetValue>?> GetAssetValues()
     {
-        await CheckLatestAuctions();
-        var result = await _assetValueRepositorie.GetLastestDates();
-        var order = result?.OrderBy(r => r.Date).ToList();
-        return order;
+        try
+        {
+            await CheckLatestAuctions();
+            var data = await _assetValueRepositorie.GetLastestDates();
+            var result = data?.OrderBy(r => r.Date).ToList();
+            return result;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erro ao acessar o banco de Dados: {ex.Message}");
+
+            var data = await _financeAsset.ReturnDataAssets();
+            var result = CreateListAssetsValues(data).OrderBy(r => r.Date).ToList();
+            return result;
+        }
     }
+
+    public async Task<List<AssetValue>?> GetAssetValues(string? ativo, string periodo)
+    {
+        var data = await _financeAsset.ReturnDataAssetsFilter(ativo, periodo);
+        if (!data.IsSuccessStatusCode) return null;
+
+        var result = CreateListAssetsValues(data.Content).OrderBy(r => r.Date).ToList();
+        return result;
+    }
+
+
     private async Task CheckLatestAuctions()
     {
         var assetValue = await _assetValueRepositorie.GetLastDate();

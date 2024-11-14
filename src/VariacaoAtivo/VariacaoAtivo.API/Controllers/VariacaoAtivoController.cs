@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿
+using Microsoft.AspNetCore.Mvc;
 using VariacaoAtivo.API.Interfaces;
 
 namespace VariacaoAtivo.API.Controllers;
@@ -14,10 +15,17 @@ public class VariacaoAtivoController : ControllerBase
         _priceVariationAggregator = priceVariationAggregator;
     }
 
-    [HttpGet()]
+    [HttpGet]
     public async Task<ActionResult> Get()
     {
         var result = await _priceVariationAggregator.GetVariation();
+        return Ok(result);
+    }
+
+    [HttpGet("refit")]
+    public async Task<ActionResult> GetRefit2([FromQuery] string ativo, [FromQuery] int periodo = 30)
+    {
+        var result = await _priceVariationAggregator.GetVariationFilter(ativo, periodo.ToString());
         return Ok(result);
     }
 }

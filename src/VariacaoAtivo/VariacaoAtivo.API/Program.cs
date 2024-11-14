@@ -1,22 +1,12 @@
+using Refit;
+using VariacaoAtivo.API.Integration;
 using VariacaoAtivo.API.Interfaces;
 using VariacaoAtivo.API.Repositories;
 using VariacaoAtivo.API.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-
-builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
-builder.Services.AddDbContext<DataBaseContext>();
-
-builder.Services.AddScoped<IGetDataApiService, GetDataApiService>();
-builder.Services.AddScoped<IPriceVariationAggregator, PriceVariationAggregator>();
-builder.Services.AddScoped<IDataService, DataService>();
-
-builder.Services.AddScoped<IAssetValueRepositorie, AssetValueRepositorie>();
+ConfigureServices(builder.Services, builder.Configuration);
 
 var app = builder.Build();
 
@@ -35,3 +25,24 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+
+void ConfigureServices(IServiceCollection services, IConfiguration configuration)
+{
+    services.AddControllers();
+    services.AddRefitClient<IFinanceAsset>().ConfigureHttpClient(c =>
+    {
+        c.BaseAddress = new Uri(configuration.GetValue<string>("UrlBase"));
+    });
+
+    services.AddEndpointsApiExplorer();
+    services.AddSwaggerGen();
+    services.AddDbContext<DataBaseContext>();
+
+    services.AddScoped<IGetDataApiService, GetDataApiService>();
+    services.AddScoped<IPriceVariationAggregator, PriceVariationAggregator>();
+    services.AddScoped<IDataService, DataService>();
+    services.AddScoped<IAssetValueRepositorie, AssetValueRepositorie>();
+
+}
+
